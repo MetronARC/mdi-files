@@ -1,0 +1,20 @@
+.sidebar,
+.sidebar-content {
+    background: black !important;
+}
+
+.sidebar-link,
+a.sidebar-link {
+    background: black !important;
+}
+
+.sidebar-link:hover {
+    background: #aa332f !important;
+}
+
+/* Update active state background */
+.sidebar-item.active .sidebar-link:hover,
+.sidebar-item.active > .sidebar-link {
+    background: linear-gradient(90deg, rgba(192, 59, 56, 0.2), rgba(192, 59, 56, 0.1) 50%, transparent) !important;
+    border-left-color: #ffffff !important;
+} 
