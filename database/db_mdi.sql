@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Apr 23, 2025 at 10:17 AM
+-- Generation Time: Apr 24, 2025 at 02:04 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -87,6 +87,13 @@ CREATE TABLE IF NOT EXISTS `auth_groups_users` (
   KEY `group_id_user_id` (`group_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `auth_groups_users`
+--
+
+INSERT INTO `auth_groups_users` (`group_id`, `user_id`) VALUES
+(2, 8);
+
 -- --------------------------------------------------------
 
 --
@@ -104,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `auth_logins` (
   PRIMARY KEY (`id`),
   KEY `email` (`email`),
   KEY `user_id` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=343 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=345 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `auth_logins`
@@ -450,7 +457,9 @@ INSERT INTO `auth_logins` (`id`, `ip_address`, `email`, `user_id`, `date`, `succ
 (339, '::1', 'ricoroenaldo@outlook.com', 1, '2025-04-19 09:53:34', 1),
 (340, '::1', 'ricoroealdo', NULL, '2025-04-23 06:33:47', 0),
 (341, '::1', 'ricoroenaldo@outlook.com', 1, '2025-04-23 06:33:54', 1),
-(342, '::1', 'marinternet.id@gmail.com', 7, '2025-04-23 10:16:37', 1);
+(342, '::1', 'marinternet.id@gmail.com', 7, '2025-04-23 10:16:37', 1),
+(343, '::1', 'ricoroenaldo@outlook.com', 1, '2025-04-24 13:29:32', 1),
+(344, '::1', 'marinternet.id@gmail.com', 7, '2025-04-24 13:59:16', 1);
 
 -- --------------------------------------------------------
 
@@ -563,7 +572,14 @@ CREATE TABLE IF NOT EXISTS `operational_procedures` (
   `revision-status` varchar(50) NOT NULL,
   `document-route` varchar(255) NOT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `operational_procedures`
+--
+
+INSERT INTO `operational_procedures` (`ID`, `document-number`, `document-name`, `effective-date`, `revision-status`, `document-route`) VALUES
+(5, '02.07.05', 'Create New Apache Virtual Host', '2025-04-18', 'Rev-1', '02.07.05 MDI - Create New Apache Virtual Host.pdf');
 
 -- --------------------------------------------------------
 
@@ -593,7 +609,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
@@ -601,7 +617,8 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 INSERT INTO `users` (`id`, `email`, `username`, `fullname`, `user_image`, `password_hash`, `reset_hash`, `reset_at`, `reset_expires`, `activate_hash`, `status`, `status_message`, `active`, `force_pass_reset`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 'ricoroenaldo@outlook.com', 'ricoroenaldo', NULL, 'default.svg', '$2y$10$gQ2PwbMRsv.qi.r8KxgewOW81vv.GzY4Za4zjsQrCcj8SP2aol9ny', NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, '2024-09-19 08:59:08', '2024-09-19 08:59:08', NULL),
-(7, 'marinternet.id@gmail.com', 'mdi', NULL, 'default.svg', '$2y$10$idBHtuMJgyiaUsqrXKtIbOfxFMolj3ZOaOAC87LF5CYsRiqpGyseG', NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, '2025-04-23 10:15:31', '2025-04-23 10:15:31', NULL);
+(7, 'marinternet.id@gmail.com', 'mdi', NULL, 'default.svg', '$2y$10$idBHtuMJgyiaUsqrXKtIbOfxFMolj3ZOaOAC87LF5CYsRiqpGyseG', NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, '2025-04-23 10:15:31', '2025-04-23 10:15:31', NULL),
+(8, 'rendy.hvacr@gmail.com', 'rendy', NULL, 'default.svg', '$2y$10$Ks/N50yMNettRhsKKKRsG.7DHcG8d9JBxpIudTw6d3nDIVbmXZsau', NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, '2025-04-24 14:03:50', '2025-04-24 14:03:50', NULL);
 
 --
 -- Constraints for dumped tables
