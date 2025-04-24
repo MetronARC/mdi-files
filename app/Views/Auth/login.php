@@ -153,7 +153,7 @@
             <!-- Logo -->
             <div class="text-center">
                 <img src="<?= base_url(); ?>/img/mdi-nobg.png" alt="Logo" class="logo-img">
-                <h4 class="mb-4">SPARC Monitoring Dashboard</h4>
+                <h4 class="mb-4">MDI File Storage</h4>
             </div>
 
             <?= view('Myth\Auth\Views\_message_block') ?>
