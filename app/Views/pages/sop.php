@@ -145,7 +145,9 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if(response.status === 'success') {
-                    // Hide modal and reset form
+                    // First remove modal backdrop and hide modal
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('padding-right', '');
                     $('#addDocumentModal').modal('hide');
                     $('#uploadForm')[0].reset();
                     
