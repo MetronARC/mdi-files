@@ -87,19 +87,28 @@ class Project extends BaseController
             $projectCode = $this->request->getPost('project_code');
 
             if (!$projectCode) {
+                log_message('error', 'getProjectDocuments: Project code is missing');
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Project code is required'
                 ]);
             }
 
+            // Log the query attempt
+            log_message('info', 'getProjectDocuments: Attempting to fetch documents for project: ' . $projectCode);
+
             $query = $this->db->table('project_code_list pcl')
                              ->select('pcl.project_code, pd.document_type, pd.document_name, pd.revision_status, pcl.project_name, 
                                      pcl.project_description, pcl.project_attention, 
                                      pcl.project_wtp, pd.document_route')
-                             ->join('project_document pd', 'pcl.project_code = pd.project_code', 'inner')
+                             ->join('project_document pd', 'pcl.project_code = pd.project_code')
                              ->where('pcl.project_code', $projectCode)
                              ->get();
+
+            if (!$query) {
+                log_message('error', 'getProjectDocuments: Query failed: ' . $this->db->error()['message']);
+                throw new \Exception('Database query failed');
+            }
 
             $result = $query->getResultArray();
 
@@ -116,15 +125,17 @@ class Project extends BaseController
                     'data' => $result
                 ]);
             } else {
+                log_message('info', 'getProjectDocuments: No documents found for project: ' . $projectCode);
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'No documents found for this project'
                 ]);
             }
         } catch (\Exception $e) {
-            return $this->response->setJSON([
+            log_message('error', 'getProjectDocuments Exception: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'An error occurred while fetching project documents'
             ]);
         }
     }
@@ -160,20 +171,33 @@ class Project extends BaseController
             $revisionStatus = $this->request->getPost('revision_status');
             $file = $this->request->getFile('document');
 
+            // Log the upload attempt
+            log_message('info', 'uploadDocument: Attempting upload for project: ' . $projectCode);
+
             if (!$projectCode || !$documentType || !$documentName || !$revisionStatus || !$file) {
+                $missing = [];
+                if (!$projectCode) $missing[] = 'project_code';
+                if (!$documentType) $missing[] = 'document_type';
+                if (!$documentName) $missing[] = 'document_name';
+                if (!$revisionStatus) $missing[] = 'revision_status';
+                if (!$file) $missing[] = 'document file';
+                
+                log_message('error', 'uploadDocument: Missing required fields: ' . implode(', ', $missing));
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Missing required fields'
+                    'message' => 'Missing required fields: ' . implode(', ', $missing)
                 ]);
             }
 
             if ($file->isValid() && !$file->hasMoved()) {
                 // Get original filename
                 $originalName = $file->getClientName();
+                log_message('info', 'uploadDocument: Processing file: ' . $originalName);
 
                 // Create directory if it doesn't exist
                 if (!is_dir($this->uploadPath)) {
                     if (!mkdir($this->uploadPath, 0777, true)) {
+                        log_message('error', 'uploadDocument: Failed to create upload directory: ' . $this->uploadPath);
                         return $this->response->setJSON([
                             'success' => false,
                             'message' => 'Failed to create upload directory'
@@ -181,8 +205,22 @@ class Project extends BaseController
                     }
                 }
 
-                // Move file to upload directory
-                $file->move($this->uploadPath, $originalName);
+                // Check if directory is writable
+                if (!is_writable($this->uploadPath)) {
+                    log_message('error', 'uploadDocument: Upload directory is not writable: ' . $this->uploadPath);
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Upload directory is not writable'
+                    ]);
+                }
+
+                try {
+                    // Move file to upload directory
+                    $file->move($this->uploadPath, $originalName);
+                } catch (\Exception $e) {
+                    log_message('error', 'uploadDocument: File move failed: ' . $e->getMessage());
+                    throw new \Exception('Failed to move uploaded file');
+                }
 
                 // Insert document info into database
                 $data = [
@@ -193,23 +231,31 @@ class Project extends BaseController
                     'revision_status' => $revisionStatus
                 ];
 
-                $this->db->table('project_document')->insert($data);
+                if (!$this->db->table('project_document')->insert($data)) {
+                    log_message('error', 'uploadDocument: Database insert failed: ' . $this->db->error()['message']);
+                    // Remove the uploaded file if database insert fails
+                    unlink($this->uploadPath . '/' . $originalName);
+                    throw new \Exception('Failed to save document information to database');
+                }
 
+                log_message('info', 'uploadDocument: Successfully uploaded document for project: ' . $projectCode);
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Document uploaded successfully'
                 ]);
             }
 
+            log_message('error', 'uploadDocument: Invalid file or file already moved');
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'File upload failed'
+                'message' => 'File upload failed: Invalid file or file already moved'
             ]);
 
         } catch (\Exception $e) {
-            return $this->response->setJSON([
+            log_message('error', 'uploadDocument Exception: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'An error occurred while uploading the document'
             ]);
         }
     }

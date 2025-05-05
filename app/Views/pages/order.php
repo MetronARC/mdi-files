@@ -296,7 +296,7 @@
                         <div class="col-md-6">
                             <div class="form-group h-100">
                                 <label for="projectCode" class="form-label fw-bold mb-2">
-                                    <i class="fas fa-code me-1"></i>
+                                    <i class="fa-solid fa-bars-progress"></i>
                                     Select Project Code:
                                 </label>
                                 <div class="select-container" id="projectCodeContainer">
@@ -549,7 +549,7 @@
 
         function loadProjectDocuments(projectCode) {
             $('#documentsSection').show();
-            
+
             if (documentsTable) {
                 documentsTable.destroy();
             }
@@ -565,20 +565,33 @@
                         return response.success ? response.data : [];
                     }
                 },
-                columns: [
-                    { data: 'document_type' },
-                    { data: 'document_name' },
-                    { data: 'revision_status' },
-                    { data: 'project_name' },
-                    { data: 'project_description' },
-                    { data: 'project_attention' },
-                    { data: 'project_wtp' },
-                    { 
+                columns: [{
+                        data: 'document_type'
+                    },
+                    {
+                        data: 'document_name'
+                    },
+                    {
+                        data: 'revision_status'
+                    },
+                    {
+                        data: 'project_name'
+                    },
+                    {
+                        data: 'project_description'
+                    },
+                    {
+                        data: 'project_attention'
+                    },
+                    {
+                        data: 'project_wtp'
+                    },
+                    {
                         data: 'document_route',
                         render: function(data, type, row) {
                             if (data) {
                                 return '<button class="btn btn-sm btn-info view-document" data-filename="' + data + '">' +
-                                       '<i class="fas fa-eye me-2"></i>View</button>';
+                                    '<i class="fas fa-eye me-2"></i>View</button>';
                             }
                             return 'No document';
                         }
@@ -587,7 +600,7 @@
                         data: null,
                         render: function(data, type, row) {
                             return '<button class="btn btn-sm btn-danger delete-document" data-filename="' + row.document_route + '" data-project-code="' + row.project_code + '">' +
-                                   '<i class="fas fa-trash me-2"></i>Delete</button>';
+                                '<i class="fas fa-trash me-2"></i>Delete</button>';
                         }
                     }
                 ]
@@ -618,7 +631,7 @@
             $('#documentsTable').on('click', '.delete-document', function() {
                 const filename = $(this).data('filename');
                 const projectCode = $(this).data('project-code');
-                
+
                 Swal.fire({
                     title: 'Are you sure?',
                     text: "This will permanently delete the document. This action cannot be undone!",
@@ -637,7 +650,7 @@
                                 project_code: projectCode
                             },
                             success: function(response) {
-                                if(response.success) {
+                                if (response.success) {
                                     Swal.fire(
                                         'Deleted!',
                                         response.message,
@@ -750,17 +763,17 @@
         }
 
         // Reset modal state when closing
-        $('#addProjectDocumentModal').on('hidden.bs.modal', function () {
+        $('#addProjectDocumentModal').on('hidden.bs.modal', function() {
             // Hide forms and show initial buttons
             $('#existingProjectForm').hide();
             $('#newProjectForm').hide();
             $('#documentChoiceButtons').show();
             $('#submitDocument').hide();
-            
+
             // Reset form values
             $('#existingProjectForm')[0].reset();
             $('#newProjectForm')[0].reset();
-            
+
             // Reset Select2
             $('#existing-project-code').val(null).trigger('change');
         });
@@ -771,7 +784,7 @@
             $('#existingProjectForm').show();
             $('#newProjectForm').hide();
             $('#submitDocument').show();
-            
+
             // Load project codes
             $.ajax({
                 url: '<?= base_url('project/getProjectCodes') ?>',
@@ -784,7 +797,7 @@
                         response.data.forEach(function(project) {
                             select.append(new Option(project.project_code, project.project_code));
                         });
-                        
+
                         // Trigger change event to refresh Select2
                         select.trigger('change');
                     } else {
@@ -818,9 +831,9 @@
             const isNewProject = $('#newProjectForm').is(':visible');
             const form = isNewProject ? $('#newProjectForm') : $('#existingProjectForm');
             const formData = new FormData(form[0]);
-            
-            const url = isNewProject ? 
-                '<?= base_url('project/create-with-document') ?>' : 
+
+            const url = isNewProject ?
+                '<?= base_url('project/create-with-document') ?>' :
                 '<?= base_url('project/upload-document') ?>';
 
             $.ajax({
@@ -830,7 +843,7 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    if(response.success) {
+                    if (response.success) {
                         // Show success message
                         Swal.fire({
                             icon: 'success',
