@@ -22,4 +22,9 @@ class Pages extends BaseController
     {
         return view('pages/sop', $this->setViewData());
     }
+
+    public function orders(): string
+    {
+        return view('pages/order', $this->setViewData());
+    }
 }
