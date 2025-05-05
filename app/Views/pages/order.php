@@ -340,7 +340,6 @@
                         <table id="documentsTable" class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Project Code</th>
                                     <th>Document Type</th>
                                     <th>Document Name</th>
                                     <th>Revision Status</th>
@@ -349,6 +348,7 @@
                                     <th>Project Attention</th>
                                     <th>Willing to Pay</th>
                                     <th>Documents</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                         </table>
@@ -566,7 +566,6 @@
                     }
                 },
                 columns: [
-                    { data: 'project_code' },
                     { data: 'document_type' },
                     { data: 'document_name' },
                     { data: 'revision_status' },
@@ -582,6 +581,13 @@
                                        '<i class="fas fa-eye me-2"></i>View</button>';
                             }
                             return 'No document';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return '<button class="btn btn-sm btn-danger delete-document" data-filename="' + row.document_route + '" data-project-code="' + row.project_code + '">' +
+                                   '<i class="fas fa-trash me-2"></i>Delete</button>';
                         }
                     }
                 ]
@@ -606,6 +612,57 @@
 
                 // Add form to body, submit it, and remove it
                 form.appendTo('body').submit().remove();
+            });
+
+            // Add click handler for delete document buttons
+            $('#documentsTable').on('click', '.delete-document', function() {
+                const filename = $(this).data('filename');
+                const projectCode = $(this).data('project-code');
+                
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This will permanently delete the document. This action cannot be undone!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '<?= base_url('project/deleteDocument') ?>',
+                            type: 'POST',
+                            data: {
+                                filename: filename,
+                                project_code: projectCode
+                            },
+                            success: function(response) {
+                                if(response.success) {
+                                    Swal.fire(
+                                        'Deleted!',
+                                        response.message,
+                                        'success'
+                                    );
+                                    // Refresh the DataTable
+                                    documentsTable.ajax.reload();
+                                } else {
+                                    Swal.fire(
+                                        'Error!',
+                                        response.message,
+                                        'error'
+                                    );
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                Swal.fire(
+                                    'Error!',
+                                    'Failed to delete document: ' + error,
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
             });
         }
 

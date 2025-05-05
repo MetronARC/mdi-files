@@ -297,4 +297,55 @@ class Project extends BaseController
             ]);
         }
     }
+
+    public function deleteDocument()
+    {
+        try {
+            $filename = $this->request->getPost('filename');
+            $projectCode = $this->request->getPost('project_code');
+
+            if (!$filename || !$projectCode) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Filename and project code are required'
+                ]);
+            }
+
+            // Start transaction
+            $this->db->transStart();
+
+            // Delete record from database
+            $this->db->table('project_document')
+                     ->where('document_route', $filename)
+                     ->where('project_code', $projectCode)
+                     ->delete();
+
+            // Delete file from directory
+            $filepath = FCPATH . 'order/' . $filename;
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+
+            // Complete transaction
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to delete document'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Document deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
 } 

@@ -25,3 +25,4 @@ $routes->post('project/getProjectDocuments', 'Project::getProjectDocuments');
 $routes->post('project/viewDocument', 'Project::viewDocument');
 $routes->post('project/upload-document', 'Project::uploadDocument');
 $routes->post('project/create-with-document', 'Project::createProjectWithDocument');
+$routes->post('project/deleteDocument', 'Project::deleteDocument');
