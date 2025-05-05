@@ -97,7 +97,7 @@ class Project extends BaseController
                              ->select('pcl.project_code, pd.document_type, pd.document_name, pd.revision_status, pcl.project_name, 
                                      pcl.project_description, pcl.project_attention, 
                                      pcl.project_wtp, pd.document_route')
-                             ->join('project_document pd', 'pcl.project_code = pd.project_code', 'left')
+                             ->join('project_document pd', 'pcl.project_code = pd.project_code', 'inner')
                              ->where('pcl.project_code', $projectCode)
                              ->get();
 
