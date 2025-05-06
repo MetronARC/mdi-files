@@ -176,6 +176,8 @@
         align-items: center;
         min-height: 42px;
         padding: 0;
+        gap: 8px;
+        position: relative;
     }
 
     /* Badge styles */
@@ -232,6 +234,73 @@
         background-color: #e9ecef !important;
         color: #383d41;
         border-color: #6c757d;
+    }
+
+    /* Edit button styles */
+    .edit-status-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        padding: 0;
+        cursor: pointer;
+        transition: color 0.2s;
+        position: relative;
+    }
+
+    .edit-status-btn:hover {
+        color: #495057;
+    }
+
+    .status-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: none;
+        min-width: 200px;
+        padding: 0.5rem 0;
+        margin-top: 5px;
+        background-color: #fff;
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+    }
+
+    .status-dropdown::before {
+        content: '';
+        position: absolute;
+        top: -6px;
+        left: 50%;
+        transform: translateX(-50%) rotate(45deg);
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-top: 1px solid rgba(0,0,0,.15);
+        border-left: 1px solid rgba(0,0,0,.15);
+    }
+
+    .status-dropdown.show {
+        display: block;
+    }
+
+    .status-dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        clear: both;
+        font-weight: 400;
+        color: #212529;
+        text-align: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+        cursor: pointer;
+    }
+
+    .status-dropdown-item:hover {
+        background-color: #f8f9fa;
     }
 
     /* Responsive adjustments */
@@ -313,8 +382,20 @@
                                     Project Status:
                                 </label>
                                 <div id="projectStatus" class="select-container">
-                                    <div class="status-container">
+                                    <div class="status-container position-relative">
                                         <span class="badge bg-secondary status-badge">No project selected</span>
+                                        <button type="button" class="edit-status-btn d-none" id="editStatusBtn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="status-dropdown" id="statusDropdown">
+                                            <button type="button" class="status-dropdown-item" data-status="Waiting Quotation">Waiting Quotation</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Waiting P.O.">Waiting P.O.</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Waiting Down Payment">Waiting Down Payment</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Waiting UAT Payment">Waiting UAT Payment</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Waiting Final Payment">Waiting Final Payment</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Done">Done</button>
+                                            <button type="button" class="status-dropdown-item" data-status="Cancel / Void">Cancel / Void</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -685,6 +766,117 @@
             });
         }
 
+        // Handle status dropdown
+        const editStatusBtn = $('#editStatusBtn');
+        const statusDropdown = $('#statusDropdown');
+        let currentProjectCode = null;
+
+        // Show/hide dropdown when clicking edit button
+        editStatusBtn.click(function(e) {
+            e.stopPropagation();
+            statusDropdown.toggleClass('show');
+        });
+
+        // Hide dropdown when clicking outside
+        $(document).click(function(e) {
+            if (!$(e.target).closest('.status-container').length) {
+                statusDropdown.removeClass('show');
+            }
+        });
+
+        // Handle status selection
+        $('.status-dropdown-item').click(function() {
+            if (!currentProjectCode) return;
+
+            const newStatus = $(this).data('status');
+            
+            // Show confirmation dialog
+            Swal.fire({
+                title: 'Change Status?',
+                text: `Are you sure you want to change the project status to "${newStatus}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, change it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    updateProjectStatus(currentProjectCode, newStatus);
+                }
+            });
+
+            statusDropdown.removeClass('show');
+        });
+
+        // Function to update project status
+        function updateProjectStatus(projectCode, newStatus) {
+            $.ajax({
+                url: '<?= base_url('project/update-project-status') ?>',
+                type: 'POST',
+                data: {
+                    project_code: projectCode,
+                    project_status: newStatus
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Refresh the status display
+                        fetchProjectStatus(projectCode);
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Project status updated successfully',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to update project status: ' + error
+                    });
+                }
+            });
+        }
+
+        // Modify project selection change handler
+        $('#projectCode').on('change', function() {
+            const selectedProject = $(this).val();
+            currentProjectCode = selectedProject;
+            
+            if (selectedProject) {
+                fetchProjectStatus(selectedProject);
+                fetchProjectDetails(selectedProject);
+                loadProjectDocuments(selectedProject);
+                $('#projectDetailsSection').show();
+                editStatusBtn.removeClass('d-none');
+            } else {
+                $('#projectStatus').html(`
+                    <div class="status-container">
+                        <span class="badge bg-secondary status-badge">No project selected</span>
+                    </div>
+                `);
+                $('#projectDetailsSection').hide();
+                $('#documentsSection').hide();
+                editStatusBtn.addClass('d-none');
+                currentProjectCode = null;
+                // Reset project details
+                $('#projectName').text('-');
+                $('#projectDescription').text('-');
+                $('#projectAttention').text('-');
+                $('#projectWTP').text('-');
+            }
+        });
+
+        // Modify fetchProjectStatus function
         function fetchProjectStatus(projectCode) {
             var formData = $('#tokenForm').serialize();
             formData += '&project_code=' + encodeURIComponent(projectCode);
@@ -722,13 +914,52 @@
                                 badgeClass = 'bg-secondary';
                         }
                         $('#projectStatus').html(`
-                        <div class="status-container">
-                            <span class="badge ${badgeClass} status-badge">
-                                <i class="fas ${getStatusIcon(response.data.project_status)} me-2"></i>
-                                ${response.data.project_status}
-                            </span>
-                        </div>
-                    `);
+                            <div class="status-container position-relative">
+                                <span class="badge ${badgeClass} status-badge">
+                                    <i class="fas ${getStatusIcon(response.data.project_status)} me-2"></i>
+                                    ${response.data.project_status}
+                                </span>
+                                <button type="button" class="edit-status-btn" id="editStatusBtn">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <div class="status-dropdown" id="statusDropdown">
+                                    <button type="button" class="status-dropdown-item" data-status="Waiting Quotation">Waiting Quotation</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Waiting P.O.">Waiting P.O.</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Waiting Down Payment">Waiting Down Payment</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Waiting UAT Payment">Waiting UAT Payment</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Waiting Final Payment">Waiting Final Payment</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Done">Done</button>
+                                    <button type="button" class="status-dropdown-item" data-status="Cancel / Void">Cancel / Void</button>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // Reattach event handlers
+                        $('#editStatusBtn').click(function(e) {
+                            e.stopPropagation();
+                            $('#statusDropdown').toggleClass('show');
+                        });
+                        
+                        $('.status-dropdown-item').click(function() {
+                            if (!currentProjectCode) return;
+                            const newStatus = $(this).data('status');
+                            
+                            Swal.fire({
+                                title: 'Change Status?',
+                                text: `Are you sure you want to change the project status to "${newStatus}"?`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Yes, change it!'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    updateProjectStatus(currentProjectCode, newStatus);
+                                }
+                            });
+
+                            $('#statusDropdown').removeClass('show');
+                        });
                     } else {
                         Swal.fire({
                             icon: 'error',

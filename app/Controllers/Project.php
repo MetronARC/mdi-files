@@ -460,4 +460,40 @@ class Project extends BaseController
             ]);
         }
     }
+
+    public function updateProjectStatus()
+    {
+        try {
+            $projectCode = $this->request->getPost('project_code');
+            $newStatus = $this->request->getPost('project_status');
+
+            if (!$projectCode || !$newStatus) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Project code and status are required'
+                ]);
+            }
+
+            $result = $this->db->table('project_code_list')
+                              ->where('project_code', $projectCode)
+                              ->update(['project_status' => $newStatus]);
+
+            if ($result) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Project status updated successfully'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to update project status'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
 } 
