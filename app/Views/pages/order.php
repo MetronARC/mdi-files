@@ -456,13 +456,7 @@
                         <div class="col-12">
                             <h6 class="mb-3">Project Details</h6>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="new-project-code">Project Code</label>
-                                <input type="text" class="form-control" id="new-project-code" name="project_code" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <div class="form-group mb-3">
                                 <label for="new-project-name">Project Name</label>
                                 <input type="text" class="form-control" id="new-project-name" name="project_name" required>
@@ -484,23 +478,6 @@
                             <div class="form-group mb-3">
                                 <label for="new-project-wtp">Client Willing to Pay</label>
                                 <input type="number" class="form-control" id="new-project-wtp" name="project_wtp" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="new-document-type">Document Type</label>
-                                <select class="form-control" id="new-document-type" name="document_type" required>
-                                    <option value="">Select Document Type</option>
-                                    <option value="QUOTATION">QUOTATION</option>
-                                    <option value="INVOICE">INVOICE</option>
-                                    <option value="PURCHASE ORDER">PURCHASE ORDER</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="new-document">Document (PDF)</label>
-                                <input type="file" class="form-control" id="new-document" name="document" accept=".pdf" required>
                             </div>
                         </div>
                     </div>
@@ -877,7 +854,9 @@
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            text: response.message,
+                            text: isNewProject ? 
+                                `Project created successfully with code: ${response.project_code}` : 
+                                response.message,
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
@@ -896,7 +875,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: 'Error uploading document: ' + error
+                        text: 'Error creating project: ' + error
                     });
                 }
             });

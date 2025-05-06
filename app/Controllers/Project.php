@@ -287,23 +287,61 @@ class Project extends BaseController
         }
     }
 
+    private function getNextProjectCode()
+    {
+        try {
+            // Get the latest project code
+            $query = $this->db->table('project_code_list')
+                             ->select('project_code')
+                             ->orderBy('project_code', 'DESC')
+                             ->limit(1)
+                             ->get();
+
+            $result = $query->getRow();
+            
+            if ($result) {
+                $lastCode = $result->project_code;
+                // Split the code into parts (02.01.01)
+                $parts = explode('.', $lastCode);
+                
+                if (count($parts) === 3) {
+                    $lastNumber = intval($parts[2]);
+                    $newNumber = $lastNumber + 1;
+                    // Format the new number with leading zeros
+                    $newCode = sprintf("%02d.%02d.%02d", intval($parts[0]), intval($parts[1]), $newNumber);
+                    return $newCode;
+                }
+            }
+            
+            // If no existing code or invalid format, start with default
+            return "02.01.01";
+        } catch (\Exception $e) {
+            log_message('error', 'Error generating next project code: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
     public function createProjectWithDocument()
     {
         try {
+            // Generate next project code
+            $projectCode = $this->getNextProjectCode();
+
             // Get project details
             $projectData = [
-                'project_code' => $this->request->getPost('project_code'),
+                'project_code' => $projectCode,
                 'project_name' => $this->request->getPost('project_name'),
                 'project_description' => $this->request->getPost('project_description'),
                 'project_attention' => $this->request->getPost('project_attention'),
                 'project_wtp' => $this->request->getPost('project_wtp'),
+                'project_status' => 'Waiting Quotation' // Set default status
             ];
 
             // Validate required fields
-            if (!$projectData['project_code'] || !$projectData['project_name']) {
+            if (!$projectData['project_name']) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Project code and name are required'
+                    'message' => 'Project name is required'
                 ]);
             }
 
@@ -357,7 +395,8 @@ class Project extends BaseController
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Project and document created successfully'
+                'message' => 'Project and document created successfully',
+                'project_code' => $projectCode
             ]);
 
         } catch (\Exception $e) {
