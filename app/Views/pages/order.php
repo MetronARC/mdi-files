@@ -285,7 +285,7 @@
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">
                         <i class="fas fa-project-diagram me-2"></i>
-                        Project Details
+                        Project Code
                     </h4>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProjectDocumentModal">
                         <i class="fas fa-plus me-2"></i>Add
@@ -326,6 +326,48 @@
     </div>
 
     <!-- Project Documents Section -->
+    <div class="row mt-4" id="projectDetailsSection" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Project Details
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group h-100">
+                                <label class="form-label fw-bold">Project Name</label>
+                                <div class="p-2 bg-white rounded" id="projectName">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group h-100">
+                                <label class="form-label fw-bold">Project Attention To</label>
+                                <div class="p-2 bg-white rounded" id="projectAttention">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group h-100">
+                                <label class="form-label fw-bold">Project WTP</label>
+                                <div class="p-2 bg-white rounded" id="projectWTP">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group h-100">
+                                <label class="form-label fw-bold">Project Description</label>
+                                <div class="p-2 bg-white rounded" id="projectDescription">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Documents Section -->
     <div class="row mt-4" id="documentsSection" style="display: none;">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -343,11 +385,7 @@
                                     <th>Document Type</th>
                                     <th>Document Name</th>
                                     <th>Revision Status</th>
-                                    <th>Project Name</th>
-                                    <th>Project Description</th>
-                                    <th>Project Attention</th>
-                                    <th>Willing to Pay</th>
-                                    <th>Documents</th>
+                                    <th>View</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -506,14 +544,22 @@
             const selectedProject = $(this).val();
             if (selectedProject) {
                 fetchProjectStatus(selectedProject);
+                fetchProjectDetails(selectedProject);
                 loadProjectDocuments(selectedProject);
+                $('#projectDetailsSection').show();
             } else {
                 $('#projectStatus').html(`
                 <div class="status-container">
                     <span class="badge bg-secondary status-badge">No project selected</span>
                 </div>
             `);
+                $('#projectDetailsSection').hide();
                 $('#documentsSection').hide();
+                // Reset project details
+                $('#projectName').text('-');
+                $('#projectDescription').text('-');
+                $('#projectAttention').text('-');
+                $('#projectWTP').text('-');
             }
         });
 
@@ -565,27 +611,10 @@
                         return response.success ? response.data : [];
                     }
                 },
-                columns: [{
-                        data: 'document_type'
-                    },
-                    {
-                        data: 'document_name'
-                    },
-                    {
-                        data: 'revision_status'
-                    },
-                    {
-                        data: 'project_name'
-                    },
-                    {
-                        data: 'project_description'
-                    },
-                    {
-                        data: 'project_attention'
-                    },
-                    {
-                        data: 'project_wtp'
-                    },
+                columns: [
+                    { data: 'document_type' },
+                    { data: 'document_name' },
+                    { data: 'revision_status' },
                     {
                         data: 'document_route',
                         render: function(data, type, row) {
@@ -872,6 +901,37 @@
                 }
             });
         });
+
+        // Add function to fetch project details
+        function fetchProjectDetails(projectCode) {
+            $.ajax({
+                url: '<?= base_url('project/get-project-details') ?>',
+                type: 'POST',
+                data: { project_code: projectCode },
+                success: function(response) {
+                    if (response.success) {
+                        const data = response.data;
+                        $('#projectName').text(data.project_name || '-');
+                        $('#projectDescription').text(data.project_description || '-');
+                        $('#projectAttention').text(data.project_attention || '-');
+                        $('#projectWTP').text(data.project_wtp ? 'Rp ' + new Intl.NumberFormat('id-ID').format(data.project_wtp) : '-');
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load project details'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to connect to server: ' + error
+                    });
+                }
+            });
+        }
     });
 </script>
 

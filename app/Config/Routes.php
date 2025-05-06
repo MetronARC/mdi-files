@@ -20,6 +20,7 @@ $routes->post('document/delete', 'Document::delete');
 // Project routes
 $routes->post('project/get-project-codes', 'Project::getProjectCodes');
 $routes->post('project/get-project-status', 'Project::getProjectStatus');
+$routes->post('project/get-project-details', 'Project::getProjectDetails');
 $routes->get('project/getProjectCodes', 'Project::getProjectCodes');
 $routes->post('project/getProjectDocuments', 'Project::getProjectDocuments');
 $routes->post('project/viewDocument', 'Project::viewDocument');

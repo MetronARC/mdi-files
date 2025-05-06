@@ -81,6 +81,44 @@ class Project extends BaseController
         }
     }
 
+    public function getProjectDetails()
+    {
+        try {
+            $projectCode = $this->request->getPost('project_code');
+
+            if (!$projectCode) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Project code is required'
+                ]);
+            }
+
+            $query = $this->db->table('project_code_list')
+                             ->select('project_name, project_description, project_attention, project_wtp')
+                             ->where('project_code', $projectCode)
+                             ->get();
+
+            $result = $query->getRow();
+
+            if ($result) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => $result
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Project not found'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function getProjectDocuments()
     {
         try {
@@ -94,15 +132,11 @@ class Project extends BaseController
                 ]);
             }
 
-            // Log the query attempt
             log_message('info', 'getProjectDocuments: Attempting to fetch documents for project: ' . $projectCode);
 
-            $query = $this->db->table('project_code_list pcl')
-                             ->select('pcl.project_code, pd.document_type, pd.document_name, pd.revision_status, pcl.project_name, 
-                                     pcl.project_description, pcl.project_attention, 
-                                     pcl.project_wtp, pd.document_route')
-                             ->join('project_document pd', 'pcl.project_code = pd.project_code')
-                             ->where('pcl.project_code', $projectCode)
+            $query = $this->db->table('project_document')
+                             ->select('document_type, document_name, revision_status, document_route, project_code')
+                             ->where('project_code', $projectCode)
                              ->get();
 
             if (!$query) {
@@ -113,13 +147,6 @@ class Project extends BaseController
             $result = $query->getResultArray();
 
             if ($result) {
-                // Format the project_wtp as Rupiah currency
-                foreach ($result as &$row) {
-                    if (isset($row['project_wtp']) && is_numeric($row['project_wtp'])) {
-                        $row['project_wtp'] = 'Rp ' . number_format($row['project_wtp'], 0, ',', '.');
-                    }
-                }
-
                 return $this->response->setJSON([
                     'success' => true,
                     'data' => $result
