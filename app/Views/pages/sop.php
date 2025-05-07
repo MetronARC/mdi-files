@@ -131,6 +131,13 @@
 
 <script>
 $(document).ready(function() {
+
+    $.ajaxSetup({
+            headers: {
+                'X-API-Key': '<?= getenv('API_KEY') ?>'
+            }
+        });
+        
     // Handle form submission
     $('#submitDocument').click(function(e) {
         e.preventDefault();

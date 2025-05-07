@@ -135,6 +135,7 @@ class Filters extends BaseFilters
         'apikey' => [
             'before' => [
                 'project/*',  // Apply to all project controller endpoints
+                'document/*',  // Apply to all document controller endpoints
             ],
         ],
     ];
