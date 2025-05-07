@@ -5,66 +5,65 @@ namespace App\Filters;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
+use Config\App;
 
 class CloudflareApiFilter implements FilterInterface
 {
     private $cloudflareEmail;
     private $cloudflareApiKey;
     private $cloudflareZoneId;
+    private $clientApiKey;
 
     public function __construct()
     {
         $this->cloudflareEmail = getenv('CLOUDFLARE_EMAIL');
         $this->cloudflareApiKey = getenv('CLOUDFLARE_API_KEY');
         $this->cloudflareZoneId = getenv('CLOUDFLARE_ZONE_ID');
+        $this->clientApiKey = getenv('CLIENT_API_KEY') ?: 'mdi-files-2024'; // Default API key if not set
     }
 
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Get the environment
+        // Get the environment and base URL
         $environment = ENVIRONMENT;
+        $config = new App();
+        $baseURL = $config->baseURL;
 
-        // Skip checks in development environment
-        if ($environment === 'development') {
+        // Skip ALL checks if in development or accessing localhost
+        if ($environment === 'development' || 
+            strpos($baseURL, 'localhost') !== false || 
+            strpos($baseURL, '127.0.0.1') !== false) {
             return;
         }
 
-        // Verify Cloudflare headers
-        $cfRay = $request->getHeaderLine('CF-RAY');
-        $cfConnectingIP = $request->getHeaderLine('CF-Connecting-IP');
-        $cfVisitor = $request->getHeaderLine('CF-Visitor');
-        $cfIPCountry = $request->getHeaderLine('CF-IPCountry');
+        // For production only
+        if ($environment === 'production') {
+            // Verify API key from request
+            $requestApiKey = $request->getHeaderLine('X-API-Key');
+            if (!$requestApiKey || !$this->verifyApiKey($requestApiKey)) {
+                return $this->failedResponse('Invalid API key', 401);
+            }
 
-        // Check if request is coming through Cloudflare
-        if (!$cfRay || !$cfConnectingIP) {
-            return $this->failedResponse('Request must come through Cloudflare', 403);
-        }
+            // Verify Cloudflare headers
+            $cfRay = $request->getHeaderLine('CF-RAY');
+            $cfConnectingIP = $request->getHeaderLine('CF-Connecting-IP');
+            $cfVisitor = $request->getHeaderLine('CF-Visitor');
 
-        // Verify the request is using HTTPS (through Cloudflare)
-        $cfVisitorData = json_decode($cfVisitor, true);
-        if (!$cfVisitorData || $cfVisitorData['scheme'] !== 'https') {
-            return $this->failedResponse('HTTPS is required', 403);
-        }
+            // Check if request is coming through Cloudflare
+            if (!$cfRay || !$cfConnectingIP) {
+                return $this->failedResponse('Request must come through Cloudflare', 403);
+            }
 
-        // Verify API key from request
-        $requestApiKey = $request->getHeaderLine('X-API-Key');
-        if (!$requestApiKey || !$this->verifyApiKey($requestApiKey)) {
-            return $this->failedResponse('Invalid API key', 401);
-        }
+            // Verify the request is using HTTPS (through Cloudflare)
+            $cfVisitorData = json_decode($cfVisitor, true);
+            if (!$cfVisitorData || $cfVisitorData['scheme'] !== 'https') {
+                return $this->failedResponse('HTTPS is required', 403);
+            }
 
-        // Optional: Verify Cloudflare IP
-        if (!$this->isCloudflareIP($request->getIPAddress())) {
-            return $this->failedResponse('Invalid request origin', 403);
-        }
-
-        // Optional: Rate limiting based on CF-IPCountry
-        if ($cfIPCountry) {
-            // You can implement country-based rate limiting here
-        }
-
-        // Verify the domain through Cloudflare API
-        if (!$this->verifyDomain()) {
-            return $this->failedResponse('Invalid domain configuration', 403);
+            // Optional: Verify Cloudflare IP
+            if (!$this->isCloudflareIP($request->getIPAddress())) {
+                return $this->failedResponse('Invalid request origin', 403);
+            }
         }
     }
 
@@ -78,8 +77,8 @@ class CloudflareApiFilter implements FilterInterface
 
     private function verifyApiKey($requestApiKey)
     {
-        // Implement secure comparison
-        return hash_equals($this->cloudflareApiKey, $requestApiKey);
+        // Implement secure comparison with client API key
+        return hash_equals($this->clientApiKey, $requestApiKey);
     }
 
     private function verifyDomain()
