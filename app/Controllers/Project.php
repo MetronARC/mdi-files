@@ -169,7 +169,8 @@ class Project extends BaseController
 
     public function viewDocument()
     {
-        $filename = $this->request->getPost('filename');
+        // Get filename from POST or GET
+        $filename = $this->request->getVar('filename');
         
         if (!$filename) {
             return $this->response->setStatusCode(400, 'Filename not provided');

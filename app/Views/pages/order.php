@@ -575,9 +575,21 @@
 <script>
     $(document).ready(function() {
         // Add API key to all AJAX requests
+        const API_KEY = '<?= getenv('API_KEY') ?>';
+        
+        // Set up default AJAX headers
         $.ajaxSetup({
-            headers: {
-                'X-API-Key': '<?= getenv('API_KEY') ?>'
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-API-Key', API_KEY);
+            }
+        });
+
+        // Set up DataTables defaults
+        $.extend(true, $.fn.dataTable.defaults, {
+            ajax: {
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-API-Key', API_KEY);
+                }
             }
         });
 
@@ -614,10 +626,10 @@
                 $('#projectDetailsSection').show();
             } else {
                 $('#projectStatus').html(`
-                <div class="status-container">
-                    <span class="badge bg-secondary status-badge">No project selected</span>
-                </div>
-            `);
+                    <div class="status-container">
+                        <span class="badge bg-secondary status-badge">No project selected</span>
+                    </div>
+                `);
                 $('#projectDetailsSection').hide();
                 $('#documentsSection').hide();
                 // Reset project details
@@ -674,6 +686,14 @@
                     },
                     dataSrc: function(response) {
                         return response.success ? response.data : [];
+                    },
+                    error: function(xhr, error, thrown) {
+                        console.error('DataTables error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load documents: ' + error
+                        });
                     }
                 },
                 columns: [
@@ -703,22 +723,34 @@
             // Add click handler for view document buttons
             $('#documentsTable').on('click', '.view-document', function() {
                 const filename = $(this).data('filename');
-                // Create a form dynamically
-                const form = $('<form>', {
-                    'method': 'POST',
-                    'action': '<?= base_url('project/viewDocument') ?>',
-                    'target': '_blank'
+                
+                // Create URL for the PDF
+                const url = '<?= base_url('project/viewDocument') ?>';
+                
+                // Use AJAX to get the PDF with proper headers
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        filename: filename
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(response) {
+                        // Create a blob URL and open it in a new window
+                        const blob = new Blob([response], { type: 'application/pdf' });
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        window.open(blobUrl, '_blank');
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load document: ' + error
+                        });
+                    }
                 });
-
-                // Add filename input
-                $('<input>', {
-                    'type': 'hidden',
-                    'name': 'filename',
-                    'value': filename
-                }).appendTo(form);
-
-                // Add form to body, submit it, and remove it
-                form.appendTo('body').submit().remove();
             });
 
             // Add click handler for delete document buttons
@@ -885,13 +917,12 @@
 
         // Modify fetchProjectStatus function
         function fetchProjectStatus(projectCode) {
-            var formData = $('#tokenForm').serialize();
-            formData += '&project_code=' + encodeURIComponent(projectCode);
-
             $.ajax({
                 url: '<?= base_url('project/get-project-status') ?>',
                 type: 'POST',
-                data: formData,
+                data: {
+                    project_code: projectCode
+                },
                 success: function(response) {
                     if (response.success) {
                         let badgeClass = '';
@@ -1086,6 +1117,9 @@
                 data: formData,
                 processData: false,
                 contentType: false,
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-API-Key', API_KEY);
+                },
                 success: function(response) {
                     if (response.success) {
                         // Show success message
@@ -1124,7 +1158,9 @@
             $.ajax({
                 url: '<?= base_url('project/get-project-details') ?>',
                 type: 'POST',
-                data: { project_code: projectCode },
+                data: {
+                    project_code: projectCode
+                },
                 success: function(response) {
                     if (response.success) {
                         const data = response.data;
