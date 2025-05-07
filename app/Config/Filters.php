@@ -37,7 +37,6 @@ class Filters extends BaseFilters
         'login'         => \Myth\Auth\Filters\LoginFilter::class,
         'role'          => \Myth\Auth\Filters\RoleFilter::class,
         'permission'    => \Myth\Auth\Filters\PermissionFilter::class,
-        'cloudflareApi' => \App\Filters\CloudflareApiFilter::class,
     ];
 
     /**
@@ -131,11 +130,5 @@ class Filters extends BaseFilters
         'login' => ['before' => ['account/*', 'profiles/*']],
         'role' => ['before' => ['admin/*']],
         'permission' => ['before' => ['admin/*']],
-        'cloudflareApi' => [
-            'before' => [
-                'document/*',
-                'project/*'
-            ]
-        ],
     ];
 }
