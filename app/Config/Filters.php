@@ -12,6 +12,7 @@ use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
+use App\Filters\ApiKeyFilter;
 
 class Filters extends BaseFilters
 {
@@ -37,6 +38,7 @@ class Filters extends BaseFilters
         'login'         => \Myth\Auth\Filters\LoginFilter::class,
         'role'          => \Myth\Auth\Filters\RoleFilter::class,
         'permission'    => \Myth\Auth\Filters\PermissionFilter::class,
+        'apikey'        => ApiKeyFilter::class,
     ];
 
     /**
@@ -130,5 +132,10 @@ class Filters extends BaseFilters
         'login' => ['before' => ['account/*', 'profiles/*']],
         'role' => ['before' => ['admin/*']],
         'permission' => ['before' => ['admin/*']],
+        'apikey' => [
+            'before' => [
+                'project/*',  // Apply to all project controller endpoints
+            ],
+        ],
     ];
 }

@@ -574,6 +574,13 @@
 
 <script>
     $(document).ready(function() {
+        // Add API key to all AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-API-Key': '<?= getenv('API_KEY') ?>'
+            }
+        });
+
         // Initialize Select2 for main project code dropdown
         $('#projectCode').select2({
             theme: 'bootstrap-5',
