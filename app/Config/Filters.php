@@ -37,6 +37,7 @@ class Filters extends BaseFilters
         'login'         => \Myth\Auth\Filters\LoginFilter::class,
         'role'          => \Myth\Auth\Filters\RoleFilter::class,
         'permission'    => \Myth\Auth\Filters\PermissionFilter::class,
+        'cloudflareApi' => \App\Filters\CloudflareApiFilter::class,
     ];
 
     /**
@@ -76,13 +77,23 @@ class Filters extends BaseFilters
             // 'csrf',
             // 'invalidchars',
             'login' => ['except' => [
-                'API/updateLastSeen',
-                'API/updateWeldID',
-                'API/insertHeartBeat',
-                'API/handleArea',
-                'API/updateMachineData',
-                'API/handleScan',
-                'API/handleRFID',
+                // Document routes
+                'document/store',
+                'document/list',
+                'document/view',
+                'document/delete',
+                
+                // Project routes
+                'project/get-project-codes',
+                'project/get-project-status',
+                'project/update-project-status',
+                'project/get-project-details',
+                'project/getProjectCodes',
+                'project/getProjectDocuments',
+                'project/viewDocument',
+                'project/upload-document',
+                'project/create-with-document',
+                'project/deleteDocument'
             ]],
         ],
         'after' => [
@@ -120,5 +131,11 @@ class Filters extends BaseFilters
         'login' => ['before' => ['account/*', 'profiles/*']],
         'role' => ['before' => ['admin/*']],
         'permission' => ['before' => ['admin/*']],
+        'cloudflareApi' => [
+            'before' => [
+                'document/*',
+                'project/*'
+            ]
+        ],
     ];
 }
