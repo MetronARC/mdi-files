@@ -130,148 +130,202 @@
 </div>
 
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
 
-    $.ajaxSetup({
+        // Add API key to all AJAX requests
+        const API_KEY = '<?= getenv('API_KEY') ?>';
+
+        $.ajaxSetup({
             headers: {
                 'X-API-Key': '<?= getenv('API_KEY') ?>'
             }
         });
-        
-    // Handle form submission
-    $('#submitDocument').click(function(e) {
-        e.preventDefault();
-        
-        var formData = new FormData($('#uploadForm')[0]);
-        
-        $.ajax({
-            url: '<?= base_url('document/store') ?>',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if(response.status === 'success') {
-                    // First remove modal backdrop and hide modal
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open').css('padding-right', '');
-                    $('#addDocumentModal').modal('hide');
-                    $('#uploadForm')[0].reset();
-                    
-                    // Show success message with SweetAlert
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: 'Document uploaded successfully',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    
-                    // Refresh the table
-                    $('#documentsTable').DataTable().ajax.reload();
-                } else {
+
+        $.extend(true, $.fn.dataTable.defaults, {
+            ajax: {
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-API-Key', API_KEY);
+                }
+            }
+        });
+
+        // Handle form submission
+        $('#submitDocument').click(function(e) {
+            e.preventDefault();
+
+            var formData = new FormData($('#uploadForm')[0]);
+
+            $.ajax({
+                url: '<?= base_url('document/store') ?>',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // First remove modal backdrop and hide modal
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css('padding-right', '');
+                        $('#addDocumentModal').modal('hide');
+                        $('#uploadForm')[0].reset();
+
+                        // Show success message with SweetAlert
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Document uploaded successfully',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Refresh the table
+                        $('#documentsTable').DataTable().ajax.reload();
+                    } else {
+                        // Show error message with SweetAlert
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
                     // Show error message with SweetAlert
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: response.message
+                        text: 'Error uploading document: ' + error
                     });
                 }
-            },
-            error: function(xhr, status, error) {
-                // Show error message with SweetAlert
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Error uploading document: ' + error
-                });
-            }
+            });
         });
-    });
 
-    // Initialize DataTable
-    $('#documentsTable').DataTable({
-        ajax: {
-            url: '<?= base_url('document/list') ?>',
-            type: 'GET',
-            dataSrc: 'data'
-        },
-        columns: [
-            { data: 'document-number' },
-            { data: 'document-name' },
-            { data: 'effective-date' },
-            { data: 'revision-status' },
-            { 
-                data: 'document-route',
-                render: function(data, type, row) {
-                    return '<form action="<?= base_url('document/view') ?>" method="post" target="_blank" style="display:inline;">' +
-                           '<input type="hidden" name="filename" value="' + data + '">' +
-                           '<button type="submit" class="btn btn-sm btn-info"><i class="fas fa-eye me-2"></i>View</button>' +
-                           '</form>';
-                }
+        // Initialize DataTable
+        $('#documentsTable').DataTable({
+            ajax: {
+                url: '<?= base_url('document/list') ?>',
+                type: 'GET',
+                dataSrc: 'data'
             },
-            {
-                data: 'id',
-                render: function(data, type, row) {
-                    return '<button class="btn btn-sm btn-danger delete-btn" data-id="' + data + '">' +
-                           '<i class="fas fa-trash-alt me-2"></i>Delete</button>';
+            columns: [{
+                    data: 'document-number'
+                },
+                {
+                    data: 'document-name'
+                },
+                {
+                    data: 'effective-date'
+                },
+                {
+                    data: 'revision-status'
+                },
+                {
+                    data: 'document-route',
+                    render: function(data, type, row) {
+                        return '<button class="btn btn-sm btn-info view-document" data-filename="' + data + '">' +
+                            '<i class="fas fa-eye me-2"></i>View</button>';
+                    }
+                },
+                {
+                    data: 'id',
+                    render: function(data, type, row) {
+                        return '<button class="btn btn-sm btn-danger delete-btn" data-id="' + data + '">' +
+                            '<i class="fas fa-trash-alt me-2"></i>Delete</button>';
+                    }
                 }
-            }
-        ]
-    });
+            ]
+        });
 
-    // Handle delete button click
-    $('#documentsTable').on('click', '.delete-btn', function() {
-        var id = $(this).data('id');
-        console.log('Deleting document with ID:', id); // Add this for debugging
-        
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '<?= base_url('document/delete') ?>',
-                    type: 'POST',
-                    data: { id: id },
-                    success: function(response) {
-                        if(response.status === 'success') {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Deleted!',
-                                text: 'Document has been deleted.',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            
-                            // Refresh the table
-                            $('#documentsTable').DataTable().ajax.reload();
-                        } else {
+        // Add click handler for view document buttons
+        $('#documentsTable').on('click', '.view-document', function() {
+            const filename = $(this).data('filename');
+            
+            // Create URL for the PDF
+            const url = '<?= base_url('document/view') ?>';
+            
+            // Use AJAX to get the PDF with proper headers
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    filename: filename
+                },
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                headers: {
+                    'X-API-Key': API_KEY
+                },
+                success: function(response) {
+                    // Create a blob URL and open it in a new window
+                    const blob = new Blob([response], { type: 'application/pdf' });
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    window.open(blobUrl, '_blank');
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load document: ' + error
+                    });
+                }
+            });
+        });
+
+        // Handle delete button click
+        $('#documentsTable').on('click', '.delete-btn', function() {
+            var id = $(this).data('id');
+            console.log('Deleting document with ID:', id); // Add this for debugging
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '<?= base_url('document/delete') ?>',
+                        type: 'POST',
+                        data: {
+                            id: id
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: 'Document has been deleted.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                // Refresh the table
+                                $('#documentsTable').DataTable().ajax.reload();
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error!',
+                                    text: response.message
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Delete error:', error); // Add this for debugging
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error!',
-                                text: response.message
+                                text: 'Error deleting document: ' + error
                             });
                         }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Delete error:', error); // Add this for debugging
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: 'Error deleting document: ' + error
-                        });
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
     });
-});
 </script>
 
 <?= $this->endSection() ?>
